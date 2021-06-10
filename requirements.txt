@@ -1,0 +1,4 @@
+obspy
+scipy
+matplotlib
+requests
