@@ -1,43 +1,9 @@
-# import numpy
+from functools import lru_cache
 from matplotlib.colors import ListedColormap
 
 
+@lru_cache  # Might as well cache the result, since it doesn't change. Ever.
 def generate_colormap(N = 1024):
-    #     MR = numpy.array([(0, 1),
-    #                       (0.10, 1),
-    #                       (0.25, 0),
-    #                       (0.57, 0),
-    #                       (0.69, 1),
-    #                       (1, 1)])
-    #     MG = numpy.array([(0, 1),
-    #                       (0.10, 1),
-    #                       (0.25, 0),
-    #                       (0.35, 0),
-    #                       (0.45, 1),
-    #                       (0.69, 1),
-    #                       (0.79, 0),
-    #                       (0.89, 0),
-    #                       (0.99, 1),
-    #                       (1.00, 1)])
-    #
-    #     MB = numpy.array([(0, 1),
-    #                       (0.10, 1),
-    #                       (0.25, 0),
-    #                       (0.35, 1),
-    #                       (0.45, 1),
-    #                       (0.47, 1),
-    #                       (0.57, 0),
-    #                       (0.79, 0),
-    #                       (0.89, 1),
-    #                       (1.00, 1)])
-    #
-    #     x = numpy.linspace(0, 1, N)
-    #     rv = numpy.interp(x, MR[:, 0], MR[:, 1])
-    #     gv = numpy.interp(x, MG[:, 0], MG[:, 1])
-    #     bv = numpy.interp(x, MB[:, 0], MB[:, 1])
-    #     cm_values = numpy.asarray([rv, gv, bv, numpy.ones((N, ))]).T
-
-    # New test values
     cm_values = [(1.0000, 1.0000, 1.0000, 1),
                  (0.9412, 0.9412, 0.9412, 1),
                  (0.8824, 0.8824, 0.8824, 1),
