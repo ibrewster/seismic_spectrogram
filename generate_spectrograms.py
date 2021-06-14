@@ -38,9 +38,9 @@ def main():
 
     STARTTIME = ENDTIME - (config['GLOBAL'].getint('minutesperimage', 10) * 60)
 
-    # DEBUG: Force a specific date/time range
-    ENDTIME = UTCDateTime(2021, 6, 3, 14, 50)
-    STARTTIME = UTCDateTime(2021, 6, 3, 14, 40)
+#     # DEBUG: Force a specific date/time range
+#     ENDTIME = UTCDateTime(2021, 6, 3, 14, 50)
+#     STARTTIME = UTCDateTime(2021, 6, 3, 14, 40)
 
     year = str(ENDTIME.year)
     month = str(ENDTIME.month)
@@ -226,6 +226,7 @@ def generate_spectrogram(filename, stations, STARTTIME, ENDTIME):
 
         # Plot the waveform
         ax1.plot(waveform_times, z_data, 'k-', linewidth = .5)
+        ax1.set_ylim([-3.2e-5, 3.2e-5])
 
         # And the spectrogram
         ax2.pcolormesh(
@@ -243,6 +244,7 @@ def generate_spectrogram(filename, stations, STARTTIME, ENDTIME):
                                       1 - side_padding, 1))
 
     fig.savefig(filename)
+    print(filename)
     gen_thumbnail(filename, fig)
 
 
