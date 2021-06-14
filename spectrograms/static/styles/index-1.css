@@ -1,0 +1,28 @@
+#header {
+    text-align: center;
+}
+
+.mosaicImg {
+    width: 150px;
+}
+
+#mosaicWrapper {
+    text-align: center;
+}
+
+#mosaic {
+    display: inline-grid;
+    row-gap: 1em;
+    grid-template-columns: repeat(6, 1fr);
+}
+
+.dateBoundry {
+    display: table;
+    height: 100%;
+    background-color: lightgray;
+}
+
+.dateLabel {
+    display: table-cell;
+    vertical-align: middle;
+}
