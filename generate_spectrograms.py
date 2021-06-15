@@ -30,6 +30,9 @@ def main():
     config = configparser.ConfigParser()
     config.read("config.ini")
 
+    # TODO: figure out and loop through all time ranges that need to be generated
+    # (i.e. current, missed in previous run, etc)
+
     # Set endtime to the closest 10 minute mark prior to current time
     ENDTIME = UTCDateTime()
     ENDTIME = ENDTIME.replace(minute=ENDTIME.minute - (ENDTIME.minute % 10),

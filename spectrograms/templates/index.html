@@ -14,9 +14,16 @@
 
 <body>
     <div id="header">
-        <input type=text id="startTime" class="dateTime">
+        <button class="volcNav" id="prevVolc" data-dir="-1"></button>
         <select id=volcano></select>
-        <input type=text id="endTime" class="dateTime">
+        <button class="volcNav" id="nextVolc" data-dir="1"></button>
+        <div class="timeSelector" id="absoluteTime">
+            <input type=number min=1 max=24 step=1 id="numHours" value="2"> hours starting:
+            <input type=text id="startTime" class="dateTime">
+        </div>
+
+        <input type=button class="timeNav" data-dir="back" id="goEarlier" value="&#9664; Earlier">
+        <input type=button class="timeNav" data-dir="forward" id="goLater" value="Later &#9654;">
     </div>
 
     <div id="mosaicWrapper">

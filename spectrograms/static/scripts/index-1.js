@@ -1,7 +1,12 @@
+//some global variables for state storage
 var columns = 6;
+var volcanoes = null;
 
 $(document).ready(function() {
-    $('#volcano').change(showMosaic);
+    $('#volcano').change(changeVolcano);
+    $('.volcNav').click(navVolcano);
+    $('.timeNav').click(navTime);
+
     $('.dateTime').datetimepicker({
         format: 'Y-m-d H:i',
         mask: true,
@@ -18,8 +23,11 @@ $(document).ready(function() {
     $('#endTime').val(endTime.format('YYYY-MM-DD HH:mm'));
     $('#startTime').val(startTime.format('YYYY-MM-DD HH:mm'));
 
+    $('.dateTime').change(showMosaic);
+
     $.getJSON('locations')
         .done(function(data) {
+            volcanoes = data;
             $('#volcano').empty();
             for (var i = 0; i < data.length; i++) {
                 var volc = data[i]
@@ -38,28 +46,54 @@ function setColumns(cols) {
         `auto repeat(${cols}, 1fr) auto`
     );
 
+    changeVolcano();
+}
+
+function navTime() {
+    var timediff = Number($('#numHours').val()) * 60 * 60 * 1000; //miliseconds
+    var startTime = dayjs($('#startTime').val());
+    if ($(this).data('dir') === "back") {
+        var newTime = startTime.subtract(timediff);
+    } else {
+        var newTime = startTime.add(timediff);
+    }
+    $('#startTime').val(newTime.format('YYYY-MM-DD HH:mm'));
+    showMosaic();
+}
+
+function navVolcano() {
+    var dir = Number($(this).data('dir'));
+    var curIdx = volcanoes.indexOf($('#volcano').val());
+    var destIdx = curIdx + dir;
+    if (destIdx < 0) {
+        destIdx = volcanoes.length + destIdx; //actually subtraction, since < 0
+    }
+    if (destIdx >= volcanoes.length) {
+        destIdx = 0;
+    }
+    $('#volcano').val(volcanoes[destIdx]);
+    changeVolcano();
+}
+
+function changeVolcano() {
+    var curIdx = volcanoes.indexOf($('#volcano').val());
+    var prevIdx = curIdx === 0 ? volcanoes.length - 1 : curIdx - 1;
+    var nextIdx = curIdx === volcanoes.length - 1 ? 0 : curIdx + 1;
+    $('#prevVolc').html("&#9650; " + volcanoes[prevIdx]);
+    $('#nextVolc').html(volcanoes[nextIdx] + " &#9660;");
     showMosaic();
 }
 
 function showMosaic() {
-    var startTime = $('#startTime').val();
-    var endTime = $('#endTime').val();
-
-    //parse start and end times to actual times
-    startTime = new Date(startTime.replace(' ', 'T'));
-    endTime = new Date(endTime.replace(' ', 'T'));
-
+    var startTime = dayjs($('#startTime').val());
     //make sure that minutes are on a 10-minute mark
-    var start_minute = startTime.getMinutes() - startTime.getMinutes() % 10;
-    startTime.setMinutes(start_minute);
+    var start_minute = startTime.minute() - startTime.minute() % 10;
+    startTime = startTime.minute(start_minute);
 
-    var endOffset = endTime.getMinutes() % 10;
-    if (endOffset > 0) {
-        end_minute = endTime.getMinutes() - endOffset + 10;
-        endTime.setMinutes(end_minute);
-    }
+    var period = $('#numHours').val() * 60 * 60 * 1000 //miliseconds
+    var endTime = startTime.add(period);
 
-    var curTime = dayjs(startTime).format("HH:mm");
+    var curTime = startTime.format("HH:mm");
     var timeDiv = `<div class="dateBoundry"><span class="dateLabel">${curTime}</span></div>`;
     $('#mosaic').empty();
     var count = 0;
@@ -67,14 +101,14 @@ function showMosaic() {
         if (count % columns === 0) {
             $('#mosaic').append(timeDiv);
         }
-        startTime.setTime(startTime.getTime() + (10 * 60 * 1000));
+        startTime = startTime.add(10 * 60 * 1000); //add 10 minutes
         var url = genImageUrl(startTime);
         var fullUrl = genImageUrl(startTime, false);
         var img = `<a href="${fullUrl}"><img src="${url}"  class="mosaicImg"></a>`
         $('#mosaic').append(img);
         count += 1;
         if (count % columns === 0) {
-            curTime = dayjs(startTime).format("HH:mm");
+            curTime = startTime.format("HH:mm");
             timeDiv = `<div class="dateBoundry"><span class="dateLabel">${curTime}</span></div>`;
             $('#mosaic').append(timeDiv);
         }
@@ -82,17 +116,17 @@ function showMosaic() {
 }
 
 function genImageUrl(time, small) {
+    //time should be a dayjs object
+
     //default to small image URL
     if (typeof(small) == "undefined") {
         small = true
     }
 
     var volcano = $('#volcano').val();
-    var year = time.getFullYear();
-    var month = time.getMonth() + 1; //actual month, not zero based
-    var day = time.getDate()
-    var hour = time.getHours();
-    var minute = time.getMinutes();
+    var year = time.year();
+    var month = time.month() + 1; //actual month, not zero based
+    var day = time.date()
 
     var url = `static/plots/${volcano}/${year}/${month}/${day}/`;
 
@@ -100,28 +134,7 @@ function genImageUrl(time, small) {
         url += 'small_'
     }
 
-    //format for two-digit values
-    month = month.toLocaleString('en-US', {
-        minimumIntegerDigits: 2,
-        useGrouping: false
-    });
-
-    day = day.toLocaleString('en-US', {
-        minimumIntegerDigits: 2,
-        useGrouping: false
-    });
-
-    hour = hour.toLocaleString('en-US', {
-        minimumIntegerDigits: 2,
-        useGrouping: false
-    });
-
-    minute = minute.toLocaleString('en-US', {
-        minimumIntegerDigits: 2,
-        useGrouping: false
-    });
-
-    url += `${year}${month}${day}T${hour}${minute}00.png`;
+    url += time.format("YYYYMMDDTHHmm00.png")
 
     return url;
 }

@@ -20,9 +20,23 @@
     display: table;
     height: 100%;
     background-color: lightgray;
+    padding-left: 2px;
+    padding-right: 2px;
 }
 
 .dateLabel {
     display: table-cell;
     vertical-align: middle;
+}
+
+input.dateTime {
+    width: 16ch;
+}
+
+div.timeSelector {
+    display: inline;
+}
+
+button.volcNav {
+    width: 12ch;
 }
