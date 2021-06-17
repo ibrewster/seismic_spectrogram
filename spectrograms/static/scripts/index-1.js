@@ -6,6 +6,10 @@ $(document).ready(function() {
     $('#volcano').change(changeVolcano);
     $('.volcNav').click(navVolcano);
     $('.timeNav').click(navTime);
+    $('.dateTime').change(startChanged);
+    $('#numHours').change(showMosaic);
+    $('#hoursAgo').change(updateStart);
+    $('.toggleButton.time').click(toggleTimeMode);
 
     $('.dateTime').datetimepicker({
         format: 'Y-m-d H:i',
@@ -20,10 +24,7 @@ $(document).ready(function() {
     var endTime = cur_time.minute(cur_time.minute() - min_offset).second(0).millisecond(0);
     var startTime = endTime.subtract(2, 'hours');
 
-    $('#endTime').val(endTime.format('YYYY-MM-DD HH:mm'));
     $('#startTime').val(startTime.format('YYYY-MM-DD HH:mm'));
-
-    $('.dateTime').change(showMosaic);
 
     $.getJSON('locations')
         .done(function(data) {
@@ -38,6 +39,30 @@ $(document).ready(function() {
             setColumns(6);
         });
 });
+
+function toggleTimeMode() {
+    $('.toggleButton.time.active').removeClass('active');
+    $(this).addClass('active');
+    var target = $(this).data('target');
+    $('.timeOption').hide();
+    $('#' + target).css('display', 'inline');
+}
+
+function startChanged() {
+    var offset = dayjs.utc() - dayjs.utc($('#startTime').val());
+    offset = Math.round(offset / (1000 * 60 * 60));
+    $('#hoursAgo').val(offset);
+    showMosaic();
+}
+
+function updateStart() {
+    var hourDiff = Number($('#hoursAgo').val());
+    var startTime = dayjs.utc().subtract(hourDiff, 'hours');
+    var minuteOffset = startTime.minute() % 10
+    startTime = startTime.subtract(minuteOffset, 'minutes');
+    $('#startTime').val(startTime.format('YYYY-MM-DD HH:mm'));
+    showMosaic();
+}
 
 function setColumns(cols) {
     columns = cols;
@@ -58,6 +83,7 @@ function navTime() {
         var newTime = startTime.add(timediff);
     }
     $('#startTime').val(newTime.format('YYYY-MM-DD HH:mm'));
+    startChanged();
     showMosaic();
 }
 
