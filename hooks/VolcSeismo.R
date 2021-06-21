@@ -1,15 +1,15 @@
 #Load libraries and data
 knitr::opts_chunk$set(echo = TRUE)
-library(dplyr)
-library(chron)
-library(e1071)
-library(tseries)
-library(fpp2)
-library(zoo)
-library(caret)
-library(randomForest)
-library(eseis)
-library(gatepoints)
+suppressMessages(library(dplyr))
+suppressMessages(library(chron))
+suppressMessages(library(e1071))
+suppressMessages(library(tseries))
+suppressMessages(library(fpp2))
+suppressMessages(library(zoo))
+suppressMessages(library(caret))
+suppressMessages(library(randomForest))
+suppressMessages(library(RSEIS))
+suppressMessages(library(gatepoints))
 
 runAnalysis <- function(data){
     time=as.POSIXct(data[,1],format = "%Y-%m-%dT%H:%M:%S")
@@ -36,7 +36,8 @@ runAnalysis <- function(data){
     aux_signal=dataZ[(j-window+1):j]    #backward 1s-sliding windows of 10 s
     #aux_time=time[(j-window+1):j]
     #plot(aux_time,aux_signal,type='l')
-    spectrum=signal_spectrum(aux_signal, dt=1/50, method = "periodogram")
+    spectrum=Spectrum(aux_signal, 1/50, one_sided = TRUE, type = 3, method = 1)
+    spectrum=cbind(spectrum$f,spectrum$spectrum)
     #plot_spectrum(data=spectrum, unit="linear")
     spectrum[,1]=spectrum[,1][order(spectrum[,2],decreasing = TRUE)]    #order the amplitudes in decreasing order
     spectrum[,2]=spectrum[,2][order(spectrum[,2],decreasing = TRUE)]    #order the amplitudes in decreasing order

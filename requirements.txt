@@ -2,3 +2,4 @@ obspy
 scipy
 matplotlib
 requests
+rpy2

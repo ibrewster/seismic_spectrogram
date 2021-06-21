@@ -1,5 +1,6 @@
 import configparser
 import csv
+import itertools
 import os
 
 from concurrent.futures import ProcessPoolExecutor
@@ -18,6 +19,7 @@ from obspy import UTCDateTime
 from scipy.signal import spectrogram
 
 from GenerateColormap import generate_colormap
+import hooks
 
 
 def init_generation(config):
@@ -26,9 +28,42 @@ def init_generation(config):
     CONFIG = config
 
 
+def run_processes(STARTTIME, ENDTIME, executor = None):
+    """Get data for all defined stations, generate spectrograms,
+    and run any defined hooks for the specified time period."""
+
+    # File path/name is based on ENDTIME
+    year = str(ENDTIME.year)
+    month = str(ENDTIME.month)
+    day = str(ENDTIME.day)
+    filename = ENDTIME.strftime('%Y%m%dT%H%M%S') + ".png"
+    script_loc = os.path.dirname(__file__)
+    img_base = os.path.join(script_loc, 'spectrograms/static/plots')
+
+    from station_config import locations
+
+    procs = []
+    for loc, stations in locations.items():
+        path = os.path.join(img_base, loc, year, month, day)
+        os.makedirs(path, exist_ok = True)
+        filepath = os.path.join(path, filename)
+
+        if executor is not None:
+            future = executor.submit(generate_spectrogram, filepath, stations, STARTTIME, ENDTIME)
+            procs.append(future)
+        else:
+            # Running single-threaded/process
+            generate_spectrogram(filepath, stations, STARTTIME, ENDTIME)
+
+    return procs
+
+
 def main():
+    global CONFIG
+
     config = configparser.ConfigParser()
     config.read("config.ini")
+    CONFIG = config
 
     # TODO: figure out and loop through all time ranges that need to be generated
     # (i.e. current, missed in previous run, etc)
@@ -41,42 +76,65 @@ def main():
 
     STARTTIME = ENDTIME - (config['GLOBAL'].getint('minutesperimage', 10) * 60)
 
-#     # DEBUG: Force a specific date/time range
-#     ENDTIME = UTCDateTime(2021, 6, 3, 14, 50)
-#     STARTTIME = UTCDateTime(2021, 6, 3, 14, 40)
-
-    year = str(ENDTIME.year)
-    month = str(ENDTIME.month)
-    day = str(ENDTIME.day)
-    filename = ENDTIME.strftime('%Y%m%dT%H%M%S') + ".png"
-    script_loc = os.path.dirname(__file__)
-    img_base = os.path.join(script_loc, 'spectrograms/static/plots')
-
-    from station_config import locations
+    gen_times = [(STARTTIME, ENDTIME)]
 
     procs = []
     with ProcessPoolExecutor(initializer = init_generation,
                              initargs = (config, )) as executor:
-        for loc, stations in locations.items():
-            path = os.path.join(img_base, loc, year, month, day)
-            os.makedirs(path, exist_ok = True)
-            filepath = os.path.join(path, filename)
-
-            future = executor.submit(generate_spectrogram, filepath, stations, STARTTIME, ENDTIME)
-            procs.append(future)
+        for start, end in gen_times:
+            procs += run_processes(start, end, executor)
 
     for proc in procs:
         print(proc.exception())
 
 
-def save_csv(station, times, z_data, n_data, e_data):
-    os.makedirs('CSVFiles', exist_ok = True)
-    end_time = pandas.to_datetime(str(times[-1])).strftime("%Y_%m_%d_%H_%M_%S")
-    csv_filename = f"CSVFiles/{station}_{end_time}.csv"
-    data = zip(times, z_data, n_data, e_data)
-    with open(csv_filename, 'w') as csvfile:
-        writer = csv.writer(csvfile)
-        writer.writerows(data)
+def create_df(times, z_data, n_data, e_data):
+    if not numpy.asarray([
+        numpy.asarray(z_data).size,
+        numpy.asarray(n_data).size,
+        numpy.asarray(e_data).size
+    ]).any():
+        raise TypeError("Need at least one of Z, N, or E channel data")
+
+    data = itertools.zip_longest(times, z_data, n_data, e_data,
+                                 fillvalue = numpy.nan)
+    headers = ['time', 'Z', 'N', 'E']
+    df = pandas.DataFrame(data = data, columns = headers)
+    return df
+
+
+def run_hooks(stream, times = None):
+    if not hooks.__all__:
+        return
+
+    if times is None:
+        times = stream[0].times()
+        DATA_START = UTCDateTime(stream[0].stats['starttime'])
+        times = ((times + DATA_START.timestamp) * 1000).astype('datetime64[ms]')
+
+    try:
+        z_data = stream.select(component = 'Z').pop().data
+    except:
+        z_data = []
+
+    try:
+        n_data = stream.select(component = 'N').pop().data
+    except Exception as e:
+        n_data = []
+
+    try:
+        e_data = stream.select(component = 'E').pop().data
+    except Exception as e:
+        e_data = []
+
+    data_df = create_df(times, z_data, n_data, e_data)
+    station = stream.traces[0].get_id().split('.')[1]
+    for hook in hooks.__all__:
+        try:
+            getattr(hooks, hook).run(data_df, station)
+        except (AttributeError, TypeError) as e:
+            print(f"Unable to run hook '{hook}'", e)
+            pass  # No run function, or bad signature
 
 
 def generate_spectrogram(filename, stations, STARTTIME, ENDTIME):
@@ -162,16 +220,32 @@ def generate_spectrogram(filename, stations, STARTTIME, ENDTIME):
             ENDTIME + PAD,
             cleanup=True
         )
+
         if stream.count() == 0:
             # TODO: Make note of no data for this station/time range, and check again later
-            continue  # No data for this station
+            continue  # No data for this station, so just leave an empty plot
+
+        # What it says
+        stream.detrend()
+
+        # Apply a butterworth bandpass filter to get rid of some noise
+        stream.filter('bandpass', freqmin = low, freqmax = high,
+                      corners = order, zerophase = True)
+
+        # Merge any gaped traces
+        stream = stream.merge(method = 1, fill_value = numpy.nan,
+                              interpolation_samples = -1)
+
+        # And pad out any short traces
+        stream.trim(STARTTIME - PAD, ENDTIME + PAD, pad = True, fill_value = numpy.nan)
+
+        if stream[0].count() < window_size:
+            # Not enough data to work with
+            continue
 
         # Get the actual start time from the data, in case it's
         # slightly different from what we requested.
         DATA_START = UTCDateTime(stream[0].stats['starttime'])
-        if stream[0].count() < window_size:
-            # Not enough data to work with
-            continue
 
         # Get the meta data for this station/channel from IRIS
         meta_url = f'{meta_base_url}net={NET}&sta={STA}&cha={CHAN_WILD}&starttime={STARTTIME-PAD}&endtime={ENDTIME+PAD}&level=channel&format=text'
@@ -191,13 +265,6 @@ def generate_spectrogram(filename, stations, STARTTIME, ENDTIME):
         waveform_times = stream[0].times()
         waveform_times = ((waveform_times + DATA_START.timestamp) * 1000).astype('datetime64[ms]')
 
-        # What it says
-        stream.detrend()
-
-        # Apply a butterworth bandpass filter to get rid of some noise
-        stream.filter('bandpass', freqmin = low, freqmax = high,
-                      corners = order, zerophase = True)
-
         for trace in stream:
             channel = trace.stats.channel
             scale = int(float(meta[channel]['Scale']))
@@ -209,13 +276,8 @@ def generate_spectrogram(filename, stations, STARTTIME, ENDTIME):
         z_channel = z_tr.stats.channel
         z_data = z_tr.data
 
-        try:
-            n_data = stream.select(component = 'N').pop().data
-            e_data = stream.select(component = 'E').pop().data
-        except Exception as e:
-            print(e)
-        else:
-            save_csv(STA, waveform_times, z_data, n_data, e_data)
+        # Run any files in the hooks directory with this data
+        run_hooks(stream, waveform_times)
 
         # Generate the parameters/data for a spectrogram
         sample_rate = float(meta[z_channel]['SampleRate'])
