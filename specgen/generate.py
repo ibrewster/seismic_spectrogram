@@ -20,8 +20,8 @@ from obspy.clients.earthworm import Client as WClient
 from obspy import UTCDateTime
 from scipy.signal import spectrogram
 
-from GenerateColormap import generate_colormap
-import hooks
+from .colormap import spectro_map
+from . import hooks
 
 
 def init_generation(config):
@@ -39,10 +39,14 @@ def run_processes(STARTTIME, ENDTIME, executor = None):
     month = str(ENDTIME.month)
     day = str(ENDTIME.day)
     filename = ENDTIME.strftime('%Y%m%dT%H%M%S') + ".png"
+    plot_loc = CONFIG['GLOBAL']['plotimgdir']
     script_loc = os.path.dirname(__file__)
-    img_base = os.path.join(script_loc, 'spectrograms/static/plots')
+    if not plot_loc.startswith('/'):
+        img_base = os.path.realpath(os.path.join(script_loc, plot_loc))
+    else:
+        img_base = plot_loc
 
-    from station_config import locations
+    from .station_config import locations
 
     procs = []
     for loc, stations in locations.items():
@@ -64,7 +68,9 @@ def main():
     global CONFIG
 
     config = configparser.ConfigParser()
-    config.read("config.ini")
+    script_loc = os.path.dirname(__file__)
+    conf_file = os.path.join(script_loc, 'config.ini')
+    config.read(conf_file)
     CONFIG = config
 
     # TODO: figure out and loop through all time ranges that need to be generated
@@ -181,7 +187,7 @@ def generate_spectrogram(filename, stations, STARTTIME, ENDTIME):
     # Values here are arbitrary, just what happened to work in testing.
     norm = Normalize(-360, -180)
 
-    cm = generate_colormap()
+    cm = spectro_map()
 
     for idx, sta_dict in enumerate(stations):
         STA = sta_dict.get('STA')

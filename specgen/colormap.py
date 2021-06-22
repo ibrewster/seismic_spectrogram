@@ -3,7 +3,7 @@ from matplotlib.colors import ListedColormap
 
 
 @lru_cache  # Might as well cache the result, since it doesn't change. Ever.
-def generate_colormap(N = 1024):
+def spectro_map(N = 1024):
     cm_values = [(1.0000, 1.0000, 1.0000, 1),
                  (0.9412, 0.9412, 0.9412, 1),
                  (0.8824, 0.8824, 0.8824, 1),

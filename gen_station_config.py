@@ -94,7 +94,7 @@ for loc, info in station_config.items():
 
         locations[loc].append(sta_dict)
 
-with open('station_config.py', 'w') as conf_file:
+with open('specgen/station_config.py', 'w') as conf_file:
     pprinter = pprint.PrettyPrinter(stream = conf_file)
     conf_file.write('locations=')
     pprinter.pprint(dict(locations))

@@ -1,9 +1,13 @@
 import configparser
 
-config = configparser.ConfigParser()
+config = configparser.ConfigParser(allow_no_value=True)
 config['GLOBAL'] = {
-    'MinutesPerImage': 10
+    'MinutesPerImage': 10,
 }
+
+config.set('GLOBAL', '; Location to save spectrogram PNG files.')
+config.set('GLOBAL', '; Will be relative to the generate_spectrograms.py script if it does not start with /')
+config.set('GLOBAL', 'PlotImgDir', '../specweb/static/plots')
 
 config['WINSTON'] = {'url': 'pubavo1.wr.usgs.gov',
                      'port': 16022, }
@@ -28,5 +32,5 @@ config['SPECTROGRAM'] = {
     'MinFreq': 0,
 }
 
-with open('config.ini', 'w') as conffile:
+with open('specgen/config.ini', 'w') as conffile:
     config.write(conffile)
