@@ -12,7 +12,7 @@ config.set('GLOBAL', 'PlotImgDir', '../specweb/static/plots')
 config['WINSTON'] = {'url': 'pubavo1.wr.usgs.gov',
                      'port': 16022, }
 
-config['IRIS'] = {'url': 'https://service.iris.edu/fdsnws/station/1/query?', }
+config['IRIS'] = {'url': 'https://service.iris.edu/fdsnws/station/1/query', }
 
 # Data filters to apply to the raw data
 config['FILTER'] = {

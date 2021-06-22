@@ -13,7 +13,7 @@ def index():
 @app.route('/locations')
 def get_locations():
     file_path = os.path.dirname(__file__)
-    conf_path = os.path.realpath(os.path.join(file_path, '../station_config.py'))
+    conf_path = os.path.realpath(os.path.join(file_path, '../specgen/station_config.py'))
     if not os.path.isfile(conf_path):
         raise flask.abort(404)
 

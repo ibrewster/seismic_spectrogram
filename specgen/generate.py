@@ -160,7 +160,6 @@ def generate_spectrogram(filename, stations, STARTTIME, ENDTIME):
     axes = gs.subplots(sharex = True)
 
     # Get some config variables
-    meta_base_url = CONFIG['IRIS']['url']
     winston_url = CONFIG['WINSTON']['url']
     winston_port = CONFIG['WINSTON'].getint('port', 16022)
 
@@ -255,40 +254,23 @@ def generate_spectrogram(filename, stations, STARTTIME, ENDTIME):
         # slightly different from what we requested.
         DATA_START = UTCDateTime(stream[0].stats['starttime'])
 
-        # Get the meta data for this station/channel from IRIS
-        meta_url = f'{meta_base_url}net={NET}&sta={STA}&cha={CHAN_WILD}&starttime={STARTTIME-PAD}&endtime={ENDTIME+PAD}&level=channel&format=text'
-        resp = requests.get(meta_url)
-
-        resp_str = StringIO(resp.text)
-        reader = csv.reader(resp_str, delimiter = '|')
-        keys = [x.strip() for x in next(reader)]
-        meta = {}
-        for line in reader:
-            channel = line[3]
-            meta[channel] = dict(zip(keys, line))
-
-        resp_str.close()
-
         # Create an array of timestamps corresponding to the data points
         waveform_times = stream[0].times()
         waveform_times = ((waveform_times + DATA_START.timestamp) * 1000).astype('datetime64[ms]')
 
         for trace in stream:
-            channel = trace.stats.channel
-            scale = int(float(meta[channel]['Scale']))
+            scale = sta_dict['SCALE']
             trace.data /= scale
             trace.data = trace.data - trace.data.mean()
 
         # Get the raw z data as a numpy array
-        z_tr = stream.select(component = 'Z').pop()
-        z_channel = z_tr.stats.channel
-        z_data = z_tr.data
+        z_data = stream.select(component = 'Z').pop().data
 
         # Run any files in the hooks directory with this data
         run_hooks(stream, waveform_times)
 
         # Generate the parameters/data for a spectrogram
-        sample_rate = float(meta[z_channel]['SampleRate'])
+        sample_rate = sta_dict['SAMPLE_RATE']
         spec_info = spectrogram(z_data, sample_rate, window_type, nperseg = window_size,
                                 noverlap = overlap, nfft = NFFT)
 
