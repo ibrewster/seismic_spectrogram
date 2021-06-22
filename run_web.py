@@ -1,4 +1,4 @@
-from spectrograms import app
+from specweb import app
 
 if __name__ == "__main__":
     app.config['TEMPLATES_AUTO_RELOAD'] = True

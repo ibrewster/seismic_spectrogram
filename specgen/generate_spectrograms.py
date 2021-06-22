@@ -10,6 +10,8 @@ import numpy
 import pandas
 import requests
 
+import matplotlib
+matplotlib.use('Agg')
 
 from matplotlib import pyplot as plt
 from matplotlib import dates as mdates
@@ -332,4 +334,7 @@ def gen_thumbnail(filename, fig):
 
 
 if __name__ == "__main__":
+    import time
+    t1 = time.time()
     main()
+    print("Completed run after:", time.time() - t1)
