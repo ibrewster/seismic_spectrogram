@@ -1,14 +1,12 @@
 import configparser
-import csv
 import itertools
 import os
+import warnings
 
 from concurrent.futures import ProcessPoolExecutor
-from io import StringIO
 
 import numpy
 import pandas
-import requests
 
 import matplotlib
 matplotlib.use('Agg')
@@ -140,8 +138,12 @@ def run_hooks(stream, times = None):
     for hook in hooks.__all__:
         try:
             getattr(hooks, hook).run(data_df, station)
-        except (AttributeError, TypeError) as e:
-            print(f"Unable to run hook '{hook}'", e)
+        except AttributeError:
+            pass  # We already warned this hook would be unavailable
+        except TypeError as e:
+            warnings.warn(f"Unable to run hook '{hook}' {e}",
+                          hooks.HookWarning,
+                          stacklevel=2)
             pass  # No run function, or bad signature
 
 

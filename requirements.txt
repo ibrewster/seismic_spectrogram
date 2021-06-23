@@ -2,4 +2,4 @@ obspy
 scipy
 matplotlib
 requests
-rpy2
+pandas
