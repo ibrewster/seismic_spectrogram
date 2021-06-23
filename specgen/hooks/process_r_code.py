@@ -1,4 +1,3 @@
-import warnings
 import os
 
 from rpy2 import robjects
@@ -23,6 +22,7 @@ def run(data, station):
     return result
 
 
+# The following is just for debugging purposes, to run this hook asside from other processing.
 if __name__ == "__main__":
     import pandas
 
