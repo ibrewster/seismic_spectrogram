@@ -7,7 +7,6 @@ from io import StringIO
 
 import numpy as np
 import pandas
-import pymysql  # To get volcano names
 import requests
 
 from obspy import UTCDateTime
@@ -19,18 +18,31 @@ from obspy.clients.earthworm import Client as WClient
 # Change values below to set the parameters used when
 # generating the station config file
 ####################################################
+# Search for all channels matching the below mask
 CHANNEL_MASK = '[SB]HZ'
+
+# The default channel to use if more than one are found
+DEFAULT_CHANNEL = 'BHZ'
+
+# Which networks to search for stations
 NETWORKS = ['AV', 'AK']
+
+# Maximum number of stations to show per volcano plot
 MAX_STATIONS = 5
+
+# Only include stations that have received data within this time period (seconds)
 MAX_AGE = 1 * 24 * 60 * 60  # 1 days
+
+# Maximum distance from volcano to search for stations.
+# Can be over-ridden on a per-volcano basis in the VOLCS list, below
 DEFAULT_RADIUS = 150
 
 # Dictionary of volcanos to look at, and the radius
 # around them to search for active stations.
 # If latitude and longitude is specified,
 # it will be used, otherwise we will try to pull latitude/longitude information
-# from the database specified in the config.
-
+# from the database specified in the config. An empty dict means use defaults
+# and pull latitude/longitude from DB.
 VOLCS = {
     'Wrangell': {},
     'Spurr': {},
@@ -149,43 +161,46 @@ def generate_stations():
     config.read("specgen/config.ini")
 
     # Get volcano locations
-    DB_HOST = config['MySQL']['db_host']
-    DB_USER = config['MySQL']['db_user']
-    DB_PASS = config['MySQL']['db_password']
-    DB_NAME = config['MySQL']['db_name']
-
     VOLCS_NEEDING_LOC = [key for key, value in VOLCS.items() if 'latitude' not in value]
 
-    dbconn = pymysql.connect(user = DB_USER, password = DB_PASS,
-                             host = DB_HOST, database = DB_NAME)
-    cursor = dbconn.cursor()
-    cursor.execute('SELECT volcano_name, latitude, longitude FROM volcano WHERE volcano_name in %s',
-                   (VOLCS_NEEDING_LOC, ))
+    # Don't try to do the query if there are no volcs needing lat/lon information
+    if VOLCS_NEEDING_LOC:
+        import pymysql  # Import here just in case we don't actually need it
 
-    for volc, lat, lon in cursor:
-        VOLCS[volc]['latitude'] = lat
-        VOLCS[volc]['longitude'] = lon
+        DB_HOST = config['MySQL']['db_host']
+        DB_USER = config['MySQL']['db_user']
+        DB_PASS = config['MySQL']['db_password']
+        DB_NAME = config['MySQL']['db_name']
+
+        dbconn = pymysql.connect(user = DB_USER, password = DB_PASS,
+                                 host = DB_HOST, database = DB_NAME)
+        cursor = dbconn.cursor()
+        cursor.execute('SELECT volcano_name, latitude, longitude FROM volcano WHERE volcano_name in %s',
+                       (VOLCS_NEEDING_LOC, ))
+
+        for volc, lat, lon in cursor:
+            VOLCS[volc]['latitude'] = lat
+            VOLCS[volc]['longitude'] = lon
 
     winston_url = config['WINSTON']['url']
     winston_port = config['WINSTON'].getint('port', 16022)
     wclient = WClient(winston_url, winston_port)
 
-    av_avail = wclient.get_availability(network='AV', channel = CHANNEL_MASK)
-    ak_avail = wclient.get_availability(network='AK', channel = CHANNEL_MASK)
+    all_channels = {}
+    all_nets = None
+    for network in NETWORKS:
+        # Get availability information for the network
+        avail = wclient.get_availability(network=network, channel = CHANNEL_MASK)
+        # get metadata for the network
+        meta = get_meta(network, config)
+        nets, channels = make_net_dict(avail, meta)
+        nets['net'] = [network] * len(nets)
+        if all_nets is None:
+            all_nets = nets
+        else:
+            all_nets = all_nets.append(nets)
 
-    # Get metadata about the available stations
-    av_meta = get_meta('AV', config)
-    ak_meta = get_meta('AK', config)
-
-    av_nets, av_channels = make_net_dict(av_avail, av_meta)
-    ak_nets, ak_channels = make_net_dict(ak_avail, ak_meta)
-
-    av_nets['net'] = ['AV'] * len(av_nets)
-    ak_nets['net'] = ['AK'] * len(ak_nets)
-    all_nets = av_nets.append(ak_nets, ignore_index = True)
-
-    all_channels = dict(av_channels)
-    all_channels.update(ak_channels)
+        all_channels.update(channels)
 
     locations = {}
     for volc, info in VOLCS.items():
@@ -198,7 +213,7 @@ def generate_stations():
         }
 
         all_nets['dist'] = haversine_np(lon1, lat1, all_nets.longitude, all_nets.latitude)
-        max_dist = info.get('radius', 150)
+        max_dist = info.get('radius', DEFAULT_RADIUS)
         avail_nets = all_nets.loc[all_nets.dist <= max_dist]
         chosen_nets = avail_nets.sort_values('dist').head(MAX_STATIONS)
         for net in chosen_nets.itertuples():
@@ -207,17 +222,17 @@ def generate_stations():
             sta_dict = {'STA': sta,
                         'DIST': net.dist, }
 
-            if 'BHZ' not in channels:
+            if DEFAULT_CHANNEL not in channels:
                 sta_dict['CHAN'] = channels[0]
                 sta_dict['SCALE'] = scales[0]
                 sta_dict['SAMPLE_RATE'] = rates[0]
             else:
-                bhz_idx = channels.index('BHZ')
-                sta_dict['SCALE'] = scales[bhz_idx]
-                sta_dict['SAMPLE_RATE'] = rates[bhz_idx]
+                chan_idx = channels.index(DEFAULT_CHANNEL)
+                sta_dict['CHAN'] = DEFAULT_CHANNEL
+                sta_dict['SCALE'] = scales[chan_idx]
+                sta_dict['SAMPLE_RATE'] = rates[chan_idx]
 
-            if net.net != 'AV':
-                sta_dict['NET'] = net.net
+            sta_dict['NET'] = net.net
 
             locations[volc]['stations'].append(sta_dict)
 
