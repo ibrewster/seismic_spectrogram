@@ -3,7 +3,7 @@ import itertools
 import os
 import warnings
 
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 
 import numpy
 import pandas
@@ -47,7 +47,8 @@ def run_processes(STARTTIME, ENDTIME, executor = None):
     from .station_config import locations
 
     procs = []
-    for loc, stations in locations.items():
+    for loc, loc_info in locations.items():
+        stations = loc_info['stations']
         path = os.path.join(img_base, loc, year, month, day)
         os.makedirs(path, exist_ok = True)
         filepath = os.path.join(path, filename)
@@ -190,7 +191,7 @@ def generate_spectrogram(filename, stations, STARTTIME, ENDTIME):
 
     cm = spectro_map()
 
-    for idx, sta_dict in enumerate(stations):
+    def _gen_station_spectrogram(idx, sta_dict):
         STA = sta_dict.get('STA')
         CHAN = sta_dict.get('CHAN', 'BHZ')
         NET = sta_dict.get('NET', 'AV')
@@ -232,7 +233,7 @@ def generate_spectrogram(filename, stations, STARTTIME, ENDTIME):
 
         if stream.count() == 0:
             # TODO: Make note of no data for this station/time range, and check again later
-            continue  # No data for this station, so just leave an empty plot
+            return (None, None)  # No data for this station, so just leave an empty plot
 
         # What it says
         stream.detrend()
@@ -250,7 +251,7 @@ def generate_spectrogram(filename, stations, STARTTIME, ENDTIME):
 
         if stream[0].count() < window_size:
             # Not enough data to work with
-            continue
+            return (None, None)
 
         # Get the actual start time from the data, in case it's
         # slightly different from what we requested.
@@ -267,9 +268,6 @@ def generate_spectrogram(filename, stations, STARTTIME, ENDTIME):
 
         # Get the raw z data as a numpy array
         z_data = stream.select(component = 'Z').pop().data
-
-        # Run any files in the hooks directory with this data
-        run_hooks(stream, waveform_times)
 
         # Generate the parameters/data for a spectrogram
         sample_rate = sta_dict['SAMPLE_RATE']
@@ -291,6 +289,13 @@ def generate_spectrogram(filename, stations, STARTTIME, ENDTIME):
         )
 
         ax2.set_xlim(STARTTIME, ENDTIME)  # Expand x axes to the full requested range
+        return (stream, waveform_times)
+
+    procs = []
+    with ThreadPoolExecutor() as executor:
+        for idx, sta_dict in enumerate(sorted(stations, key = lambda x: x['DIST'])):
+            future = executor.submit(_gen_station_spectrogram, idx, sta_dict)
+            procs.append(future)
 
     axes[-1].xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))  # Format dates as hour:minute
     # TODO: save plot image full-size and thumbnail
@@ -302,6 +307,13 @@ def generate_spectrogram(filename, stations, STARTTIME, ENDTIME):
     fig.savefig(filename)
     print(filename)
     gen_thumbnail(filename, fig)
+
+    # Run any files in the hooks directory with this data
+    for proc in procs:
+        stream, times = proc.result()
+        if stream is None or times is None:
+            continue
+        run_hooks(stream, times)
 
 
 def gen_thumbnail(filename, fig):

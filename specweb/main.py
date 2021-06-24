@@ -22,4 +22,6 @@ def get_locations():
     spec.loader.exec_module(conf)
 
     locations = conf.locations
-    return flask.jsonify(tuple(locations.keys()))
+    locs = sorted(locations.keys(), key = lambda x: locations[x]['sort'],
+                  reverse = True)
+    return flask.jsonify(tuple(locs))

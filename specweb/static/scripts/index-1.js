@@ -9,6 +9,10 @@ $(document).ready(function() {
     $('.dateTime').change(startChanged);
     $('#numHours').change(showMosaic);
     $('#hoursAgo').change(updateStart);
+    $('#minsPerRow').change(function(){
+        setColumns(Number(this.value)/10);
+    });
+    
     $('.toggleButton.time').click(toggleTimeMode);
 
     $('.dateTime').datetimepicker({

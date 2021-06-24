@@ -5,6 +5,10 @@
     position: relative;
 }
 
+input.strictNumsOnly{
+    vertical-align:middle;
+}
+
 .timeSelector {
     position: absolute;
     border: 1px solid black;
@@ -50,7 +54,7 @@ div.timeSelector {
 }
 
 button.volcNav {
-    width: 12ch;
+    width: 16ch;
 }
 
 .toggleButton {
