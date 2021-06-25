@@ -4,3 +4,4 @@ matplotlib
 requests
 pandas
 pymysql
+flask>=2
