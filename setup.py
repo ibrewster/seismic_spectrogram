@@ -2,9 +2,6 @@
 import subprocess
 import sys
 
-import gen_config
-import gen_station_config
-
 if __name__ == "__main__":
     assume_yes = False
     if len(sys.argv) > 1 and sys.argv[1] == '-y':
@@ -27,6 +24,7 @@ if __name__ == "__main__":
         gen_base_conf = input("Generate new config.ini file? [Y/n]: ")
 
     if gen_base_conf.lower() != 'n':
+        import gen_config
         gen_config.main()
         print("specgen/config.ini has been generated.")
         print("Please verify the contents of this file and edit")
@@ -39,6 +37,7 @@ if __name__ == "__main__":
         gen_station = input("Generate new station config file? [Y/n]: ")
 
     if gen_station.lower() != 'n':
+        import gen_station_config
         print("Please verify that the settings and VOLCS list at the top of the")
         print("gen_station_config.py file are as desired")
         if not assume_yes:
