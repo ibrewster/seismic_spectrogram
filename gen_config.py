@@ -1,4 +1,8 @@
 import configparser
+import operator
+import os
+
+from functools import reduce
 
 
 def main():
@@ -46,6 +50,19 @@ def main():
         'MaxFreq': 10,
         'MinFreq': 0,
     }
+
+    # Get any enviroment variable overrides
+    print("All env vars:", list(os.environ.keys()))
+    for key in config:
+        print("Checking for overrides for key", key)
+        for envkey, value in os.environ.items():
+            if envkey.startswith(key):
+                print("Override found for key", key)
+                env_parts = envkey.split('__')
+                try:
+                    reduce(operator.getitem, env_parts[:-1], config)[env_parts[-1]] = value
+                except:
+                    print("Unable to get dest for override key", envkey)
 
     with open('specgen/config.ini', 'w') as conffile:
         config.write(conffile)
