@@ -52,9 +52,7 @@ def main():
     }
 
     # Get any enviroment variable overrides
-    print("All env vars:", list(os.environ.keys()))
     for key in config:
-        print("Checking for overrides for key", key)
         for envkey, value in os.environ.items():
             if envkey.startswith(key):
                 print("Override found for key", key)
