@@ -14,7 +14,7 @@ RUN pip3 install -r requirements.txt
 RUN pip3 install uwsgi
 COPY specgen ./specgen
 COPY specweb ./specweb
-COPY *.py .
+COPY *.py ./
 RUN python3 setup.py -y
 RUN mkdir /var/log/specweb && chmod 777 /var/log/specweb
 COPY docker/generate-cron /etc/cron.d/generate-cron
