@@ -1,6 +1,6 @@
 **/config.ini
 **/__pycache__
 **/station_config.py
-!gen_sation_config.py
+!gen_station_config.py
 **/WACK*.csv
 **/plots
