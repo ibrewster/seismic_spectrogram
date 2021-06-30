@@ -55,7 +55,7 @@ def main():
     for key in config:
         for envkey, value in os.environ.items():
             if envkey.startswith(key):
-                print("Override found for key", key)
+                print("Override found for key", key, ":", envkey)
                 env_parts = envkey.split('__')
                 try:
                     reduce(operator.getitem, env_parts[:-1], config)[env_parts[-1]] = value

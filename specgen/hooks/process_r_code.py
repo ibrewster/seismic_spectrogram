@@ -1,10 +1,16 @@
 import os
+import time
+
+from io import StringIO
+
+import psycopg2
 
 from rpy2 import robjects
 from rpy2.robjects.packages import importr
 from rpy2.robjects import pandas2ri
-
 from rpy2.robjects.conversion import localconverter
+
+from . import _process_r_vars as VARS
 
 
 def run(data, station):
@@ -18,8 +24,54 @@ def run(data, station):
         result = r_func(data)
 
     # TODO: Save result to DB
-    print("Saving result for", station)
+    save_to_db(result, station)
     return result
+
+
+def save_to_db(data, station):
+    conn = psycopg2.connect(host = 'akutan.snap.uaf.edu',
+                            database = 'volcano_seismology',
+                            user = VARS.DB_USER,
+                            password = VARS.DB_PASSWORD)
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM stations WHERE name=%s", (station, ))
+    sta_id = cursor.fetchone()
+    if sta_id is None:
+        print("Unable to store result for", station, ". No station id found.")
+        return
+
+    print("Saving result for", station)
+    data.replace('', '\\N', inplace = True)
+    sta_id = sta_id * len(data)
+    data['station'] = sta_id
+    data['channel'] = 'BHZ'
+    data.rename(columns = {'V1': 'datetime'}, inplace = True)
+    t_start = data.datetime.min()
+    t_stop = data.datetime.max()
+
+    # Set DB to UTC so we don't have time zone issues
+    cursor.execute("SET timezone = 'UTC'")
+
+    # Delete any records covered by this run
+    DEL_SQL = """
+    DELETE FROM data
+    WHERE station=%s
+    AND channel=%s
+    AND datetime>=%s
+    AND datetime<=%s
+    """
+    t1 = time.time()
+    cursor.execute(DEL_SQL, (sta_id[0], 'BHZ', t_start, t_stop))
+    print("Deleted in", time.time() - t1)
+
+    buffer = StringIO()
+    data.to_csv(buffer, index = False, header = False,
+                na_rep = '\\N')
+    buffer.seek(0)
+
+    cursor.copy_from(buffer, 'data', sep = ",", columns = data.columns)
+    conn.commit()
+    cursor.close()
 
 
 # The following is just for debugging purposes, to run this hook asside from other processing.
