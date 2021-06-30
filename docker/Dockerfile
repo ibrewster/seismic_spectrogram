@@ -1,8 +1,8 @@
 FROM ubuntu:latest
 # SET SOME ENVIROMENT VARIABLES FOR THE CONFIG PROCESS
 # MODIFY THESE AS NEEDED TO MATCH YOUR INSTALLATION
-ENV MySQL__DB_USER <YOUR_USER>
-ENV MySQL__DB_PASSWORD <YOUR_PASSWORD>
+ENV MySQL__DB_USER <myuser>
+ENV MySQL__DB_PASSWORD <mypassword>
 # END USER ENVIROMENT
 ENV DEBIAN_FRONTEND noninteractive
 WORKDIR /code
@@ -10,13 +10,13 @@ RUN apt-get update && apt-get -y upgrade && apt-get -y install git cron nano pyt
 RUN git clone https://github.com/ibrewster/seismic_spectrogram.git .
 RUN Rscript docker/install_r_packages.R
 RUN pip3 install uwsgi
+ADD http://worldtimeapi.org/api/ip.txt /tmp/bustcache
+RUN git pull
 RUN python3 setup.py -y
 RUN mkdir /var/log/specweb && chmod 777 /var/log/specweb
+RUN mkdir /var/run/specweb && chmod 777 /var/run/specweb
 COPY docker/generate-cron /etc/cron.d/generate-cron
 RUN chmod 0644 /etc/cron.d/generate-cron
 RUN crontab /etc/cron.d/generate-cron
 RUN touch /var/log/cron.log
-RUN echo "The enviroment has been set up, but you still need to edit"
-RUN echo "the /code/specgen/config.ini file as needed, and then"
-RUN echo "edit and run gen_station_config.py before things will work"
 CMD cron && uwsgi -i ./specweb/specweb.ini

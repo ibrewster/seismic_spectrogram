@@ -1,6 +1,8 @@
 import configparser
 import itertools
 import os
+import shutil
+import tempfile
 import warnings
 
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
@@ -66,6 +68,10 @@ def run_processes(STARTTIME, ENDTIME, executor = None):
 def main():
     global CONFIG
 
+    tempdir = os.path.join(tempfile.gettempdir(), "specgenTemp")
+    print("Creating tempdir:", tempdir)
+    os.makedirs(tempdir, exist_ok = True)
+
     config = configparser.ConfigParser()
     script_loc = os.path.dirname(__file__)
     conf_file = os.path.join(script_loc, 'config.ini')
@@ -92,7 +98,13 @@ def main():
             procs += run_processes(start, end, executor)
 
     for proc in procs:
-        print(proc.exception())
+        if proc.exception() is not None:
+            print(proc.exception())
+
+    try:
+        shutil.rmtree(tempdir)
+    except OSError:
+        pass
 
 
 def create_df(times, z_data, n_data, e_data):

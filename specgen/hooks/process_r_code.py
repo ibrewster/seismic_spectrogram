@@ -1,6 +1,7 @@
 import os
-import time
+import tempfile
 
+from pathlib import Path
 from io import StringIO
 
 import psycopg2
@@ -14,6 +15,14 @@ from . import _process_r_vars as VARS
 
 
 def run(data, station):
+    tempdir = os.path.join(tempfile.gettempdir(), "specgenTemp")
+    lock_file = os.path.join(tempdir, station)
+    if os.path.exists(lock_file):
+        print(f"!!!ALREADY RAN STATION {station}. SKIPPING!!!!")
+        return
+
+    Path(lock_file).touch()
+
     base = importr('base')
 
     # Load the R script
@@ -60,9 +69,7 @@ def save_to_db(data, station):
     AND datetime>=%s
     AND datetime<=%s
     """
-    t1 = time.time()
     cursor.execute(DEL_SQL, (sta_id[0], 'BHZ', t_start, t_stop))
-    print("Deleted in", time.time() - t1)
 
     buffer = StringIO()
     data.to_csv(buffer, index = False, header = False,
