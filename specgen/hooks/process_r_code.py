@@ -4,6 +4,7 @@ import tempfile
 from pathlib import Path
 from io import StringIO
 
+import pandas
 import psycopg2
 
 from rpy2 import robjects
@@ -55,6 +56,7 @@ def save_to_db(data, station):
     data['station'] = sta_id
     data['channel'] = 'BHZ'
     data.rename(columns = {'V1': 'datetime'}, inplace = True)
+    data['datetime'] = pandas.to_datetime(data['datetime'], utc = True)
     t_start = data.datetime.min()
     t_stop = data.datetime.max()
 
