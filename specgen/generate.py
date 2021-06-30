@@ -69,6 +69,9 @@ def main():
     global CONFIG
 
     tempdir = os.path.join(tempfile.gettempdir(), "specgenTemp")
+    if os.path.exists(tempdir):
+        shutil.rmtree(tempdir)
+
     print("Creating tempdir:", tempdir)
     os.makedirs(tempdir, exist_ok = True)
 
