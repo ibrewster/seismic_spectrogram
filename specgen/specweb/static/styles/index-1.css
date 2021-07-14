@@ -5,8 +5,8 @@
     position: relative;
 }
 
-input.strictNumsOnly{
-    vertical-align:middle;
+input.strictNumsOnly {
+    vertical-align: middle;
 }
 
 .timeSelector {
@@ -20,6 +20,11 @@ input.strictNumsOnly{
 
 .mosaicImg {
     width: 150px;
+    height: 39px;
+}
+
+.mosaicImg.empty {
+    height: 0px;
 }
 
 #mosaicWrapper {
@@ -32,17 +37,40 @@ input.strictNumsOnly{
     grid-template-columns: repeat(6, 1fr);
 }
 
-.dateBoundry {
-    display: table;
+.mosaicSegment {
+    display: inline-grid;
+    grid-template-columns: 1fr;
+    align-items: center;
+}
+
+.rowStart {
+    display: grid;
+    grid-template-columns: auto auto;
     height: 100%;
+    background-color: lightgray;
+    padding-left: 2px;
+    padding-right: 2px;
+    align-items: center;
+}
+
+.dateBoundry {
+    display: inline-grid;
+    grid-template-columns: auto;
+    align-items: center;
     background-color: lightgray;
     padding-left: 2px;
     padding-right: 2px;
 }
 
-.dateLabel {
-    display: table-cell;
-    vertical-align: middle;
+.siteDiv {
+    display: inline-grid;
+    grid-template-columns: auto;
+    justify-items: end;
+    align-items: center;
+    height: 100%;
+    font-size: 80%;
+    border-left: 1px solid black;
+    padding-left: 4px;
 }
 
 input.dateTime {

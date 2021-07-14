@@ -1,7 +1,7 @@
 import flask
 from . import app
-from spectro import graphing
-from spectro.config import locations
+from specgen import graphing
+from specgen.config import locations
 
 
 @app.route("/")
