@@ -10,3 +10,4 @@ config.ini
 plots
 */static/plots
 station_config.py
+cache

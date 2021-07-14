@@ -12,9 +12,9 @@ def main():
     }
 
     config.set('GLOBAL', '; Location to save spectrogram PNG files.')
-    config.set('GLOBAL', '; Will be relative to the generate_spectrograms.py script if '
+    config.set('GLOBAL', '; Will be relative to the specgen/generate.py script if '
                'it does not start with /')
-    config.set('GLOBAL', 'PlotImgDir', '../specweb/static/plots')
+    config.set('GLOBAL', 'PlotImgDir', './specweb/static/plots')
 
     config['WINSTON'] = {
         '; Currently waveform data is pulled from a winston.': None,
@@ -62,7 +62,7 @@ def main():
                 except:
                     print("Unable to get dest for override key", envkey)
 
-    with open('specgen/config.ini', 'w') as conffile:
+    with open('specgen/config/config.ini', 'w') as conffile:
         config.write(conffile)
 
 
