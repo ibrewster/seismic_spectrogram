@@ -1,4 +1,4 @@
-from spectro.specweb import app
+from specgen.specweb import app
 
 if __name__ == "__main__":
     app.config['TEMPLATES_AUTO_RELOAD'] = True
