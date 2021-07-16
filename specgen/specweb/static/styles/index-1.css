@@ -47,6 +47,7 @@ body {
     margin-left: 3px;
     position: relative;
     margin-top: 7px;
+    align-self: start;
 }
 
 .centerJustify {

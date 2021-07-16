@@ -60,8 +60,6 @@ def load(network = None, station = None, location = None,
 
         # TODO: flag limited data availability
     except (IndexError, AvailabilityError):
-        with open('/tmp/plots/AAA.txt', 'a') as errFile:
-            errFile.write(f"Availability error for {station}\n")
         # No availability for this station/timerange
         return (None, None)
 
@@ -77,10 +75,6 @@ def load(network = None, station = None, location = None,
     )
 
     if stream.count() == 0:
-        with open('/tmp/plots/AAA.txt', 'a') as errFile:
-            errFile.write(stream[0].id)
-            errFile.write(' (counts): ')
-            errFile.write(str(stream.count()) + "/n")
         return (None, None)  # No data for this station, so just leave an empty plot
 
     # Merge any gaped traces
@@ -93,12 +87,6 @@ def load(network = None, station = None, location = None,
 
     if window_size is not None and stream[0].count() < window_size:
         # Not enough data to work with
-        with open('/tmp/plots/AAA.txt', 'a') as errFile:
-            errFile.write(stream[0].id)
-            errFile.write(': ')
-            errFile.write(str(stream[0].count()))
-            errFile.write(' ')
-            errFile.write(str(window_size) + '\n')
         return (None, None)
 
     # What it says

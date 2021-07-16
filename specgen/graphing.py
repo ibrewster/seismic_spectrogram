@@ -15,7 +15,6 @@ from .colormap import spectro_map
 
 
 def gen_spectrograph(times, data):
-    data.plot(outfile = f"/tmp/plots/{data.id}test-2.png")
     # Create a plot figure to hold the waveform and spectrogram graphs
     plot_height = 1.52
     plot_width = 5.76
