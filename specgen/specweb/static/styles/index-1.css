@@ -34,6 +34,13 @@ body {
     left: 1px;
 }
 
+#availableStations {
+    max-height: 7.5em;
+    overflow-y: auto;
+    min-height: 1.5em;
+    border: 2px inset;
+}
+
 #settings {
     border: 1px solid black;
     box-shadow: 2px 2px 1px rgba(0, 0, 0, .5);
@@ -57,6 +64,13 @@ body {
     padding: 0px 5px;
     margin-bottom: 10px;
     margin-top: 2px;
+}
+
+#stationSelect {
+    margin: 0;
+    padding: 0;
+    padding-left: 3px;
+    list-style: none;
 }
 
 input.strictNumsOnly {

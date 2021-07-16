@@ -122,11 +122,30 @@ function navVolcano() {
 }
 
 function changeVolcano() {
-    var curIdx = volcanoes.indexOf($('#volcano').val());
+    var volcano = $('#volcano').val();
+    var volc_stations = sitesByVolcano[volcano];
+    volc_stations.sort(function(a, b) {
+        return a[1] - b[1];
+    })
+
+    var curIdx = volcanoes.indexOf(volcano);
     var prevIdx = curIdx === 0 ? volcanoes.length - 1 : curIdx - 1;
     var nextIdx = curIdx === volcanoes.length - 1 ? 0 : curIdx + 1;
     $('#prevVolc').html("&#9650; " + volcanoes[prevIdx]);
     $('#nextVolc').html(volcanoes[nextIdx] + " &#9660;");
+
+    $('#stationSelect').empty();
+    for (var i = 0; i < volc_stations.length; i++) {
+        var sta = volc_stations[i];
+        var name = sta[0];
+        var dist = Math.round(sta[1] * 100) / 100;
+        var disp = `${name} (${dist}km)`
+        var html = `<li class="stationOption"><input id="station_${name}" type="checkbox" data-station=${name} />`
+        html += `${disp}</li>`
+        $('#stationSelect').append(html);
+        $(`#station_${name}`)[0].checked = true;
+    }
+
     showMosaic();
 }
 
