@@ -14,38 +14,63 @@
 
 <body>
     <div id="header">
-        <div id="rowSetup" class="timeSelector">
-            Show
-            <select id="minsPerRow">
-                <option>30</option>
-                <option>40</option>
-                <option selected>60</option>
-                <option>120</option>
-            </select>
-            Minutes/row
-        </div>
-        <button class="volcNav" id="prevVolc" data-dir="-1"></button>
-        <select id=volcano></select>
-        <button class="volcNav" id="nextVolc" data-dir="1"></button>
-        <div class="timeSelector" id="timeSelector">
-            Show
-            <input type=number class="strictNumsOnly" min=1 max=24 step=1 id="numHours" value="2"> hours starting:
-            <div class="timeOption" id="timeAbsolute">
-                <input type=text id="startTime" class="dateTime">
-            </div>
-            <div class="timeOption" id="timeRelative" style="display:none">
-                <input type=number class="strictNumsOnly" min=1 max=9999 step=1 id="hoursAgo" value="2"> hours ago
-            </div>
-        </div>
-        <button class="toggleButton time active left" data-target="timeAbsolute" id="toggleAbsolute">Absolute</button><button class="toggleButton time right" data-target="timeRelative" id="toggleRelative">Relative</button>
+        <div id="settingsToggle" class="fa">&#xf013;</div>
 
-        <input type=button class="timeNav" data-dir="back" id="goEarlier" value="&#9664; Earlier">
-        <input type=button class="timeNav" data-dir="forward" id="goLater" value="Later &#9654;">
+        <div id="volcSelect">
+            <button class="volcNav" id="prevVolc" data-dir="-1"></button>
+            <select id=volcano></select>
+            <button class="volcNav" id="nextVolc" data-dir="1"></button>
+        </div>
+
     </div>
 
+    <div id="main">
+        <div id="settings">
+            <div class="settingsHeader">
+                Display Time
+            </div>
+            <div class="settingsContent">
+                <div id="timeToggle" class="centerJustify">
+                    <button class="toggleButton time active left" data-target="timeAbsolute" id="toggleAbsolute">Absolute</button><button class="toggleButton time right" data-target="timeRelative" id="toggleRelative">Relative</button>
+                </div>
+                <div class="timeSelector" id="timeSelector">
+                    Show
+                    <input type=number class="strictNumsOnly" min=1 max=24 step=1 id="numHours" value="2"> hours
+                    <br>starting:
+                    <div class="timeOption" id="timeAbsolute">
+                        <input type=text id="startTime" class="dateTime">
+                    </div>
+                    <div class="timeOption" id="timeRelative" style="display:none">
+                        <input type=number class="strictNumsOnly" min=1 max=9999 step=1 id="hoursAgo" value="2"> hours ago
+                    </div>
+                </div>
+                <br>
+                <div class="centerJustify">
+                    <input type=button class="timeNav" data-dir="back" id="goEarlier" value="&#9664; Earlier">
+                    <input type=button class="timeNav" data-dir="forward" id="goLater" value="Later &#9654;">
+                </div>
+            </div>
 
-    <div id="mosaicWrapper">
-        <div id="mosaic"></div>
+
+            <div class="settingsHeader">
+                Row Options
+            </div>
+            <div class="settingsContent">
+                Show
+                <select id="minsPerRow">
+                    <option>30</option>
+                    <option>40</option>
+                    <option selected>60</option>
+                    <option>120</option>
+                </select> Minutes/row
+            </div>
+
+
+        </div>
+
+        <div id="mosaicWrapper">
+            <div id="mosaic"></div>
+        </div>
     </div>
 </body>
 

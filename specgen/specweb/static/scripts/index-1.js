@@ -5,6 +5,7 @@ var sitesByVolcano = null;
 
 $(document).ready(function() {
     $(document).on('click', '.mosaicSegment', getFullImage);
+    $('#settingsToggle').click(toggleSettings);
     $('#volcano').change(changeVolcano);
     $('.volcNav').click(navVolcano);
     $('.timeNav').click(navTime);
@@ -55,6 +56,16 @@ function toggleTimeMode() {
     var target = $(this).data('target');
     $('.timeOption').hide();
     $('#' + target).css('display', 'inline');
+}
+
+function toggleSettings() {
+    $('#settings').toggle();
+    if ($('#settings').is(':visible')) {
+        $('#main').css('grid-template-columns', 'auto 1fr');
+    } else {
+        $('#main').css('grid-template-columns', '1fr');
+    }
+
 }
 
 function startChanged() {

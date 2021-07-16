@@ -1,21 +1,66 @@
+body {
+    margin: 0px;
+}
+
 #header {
-    text-align: center;
-    margin-bottom: 2.5em;
-    background-color: lightgray;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    justify-items: center;
+    align-items: center;
+    background-color: #FAFAFA;
     position: relative;
+    padding: 3px 5px;
+    margin-bottom: 2px;
+    border-top: 3px solid green;
+    box-shadow: 0px 2px 0px rgba(0, 0, 0, .25);
+}
+
+#main {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    justify-items: center;
+}
+
+#settingsToggle {
+    font-size: 125%;
+    cursor: pointer;
+}
+
+#settings::before {
+    content: "▲";
+    text-shadow: 2px 0px 1px rgba(0, 0, 0, .5);
+    position: absolute;
+    bottom: calc(100% - 4px);
+    left: 1px;
+}
+
+#settings {
+    border: 1px solid black;
+    box-shadow: 2px 2px 1px rgba(0, 0, 0, .5);
+    margin-left: 3px;
+    position: relative;
+    margin-top: 7px;
+}
+
+.centerJustify {
+    text-align: center;
+}
+
+.settingsHeader {
+    background-color: lightgray;
+    text-align: center;
+    padding: 3px 0px;
+}
+
+.settingsContent {
+    white-space: nowrap;
+    padding: 0px 5px;
+    margin-bottom: 10px;
+    margin-top: 2px;
 }
 
 input.strictNumsOnly {
     vertical-align: middle;
-}
-
-.timeSelector {
-    position: absolute;
-    border: 1px solid black;
-    background-color: whitesmoke;
-    box-shadow: 2px 2px 2px rgba(0, 0, 0, .25);
-    top: calc( 100% + 5px);
-    padding: 1px 5px;
 }
 
 .mosaicImg {
@@ -104,4 +149,21 @@ button.volcNav {
 
 .timeOption {
     display: inline;
+}
+
+@font-face {
+    font-family: 'FontAwesome';
+    src: url('../fonts/fontawesome-webfont.eot?v=4.7.0');
+    src: url('../fonts/fontawesome-webfont.eot?#iefix&v=4.7.0') format('embedded-opentype'), url('../fonts/fontawesome-webfont.woff2?v=4.7.0') format('woff2'), url('../fonts/fontawesome-webfont.woff?v=4.7.0') format('woff'), url('../fonts/fontawesome-webfont.ttf?v=4.7.0') format('truetype'), url('../fonts/fontawesome-webfont.svg?v=4.7.0#fontawesomeregular') format('svg');
+    font-weight: normal;
+    font-style: normal;
+}
+
+.fa {
+    display: inline-block;
+    font: normal normal normal 14px/1 FontAwesome;
+    font-size: inherit;
+    text-rendering: auto;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
