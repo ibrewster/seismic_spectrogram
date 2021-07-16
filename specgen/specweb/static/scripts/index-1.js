@@ -5,6 +5,7 @@ var sitesByVolcano = null;
 
 $(document).ready(function() {
     $(document).on('click', '.mosaicSegment', getFullImage);
+    $(document).on('change', 'input.stationOption', showMosaic);
     $('#settingsToggle').click(toggleSettings);
     $('#volcano').change(changeVolcano);
     $('.volcNav').click(navVolcano);
@@ -135,15 +136,31 @@ function changeVolcano() {
     $('#nextVolc').html(volcanoes[nextIdx] + " &#9660;");
 
     $('#stationSelect').empty();
+
+    //Retrieve station selections from localStorage
+    //populate with first 5 elements of stations by default
+    var selectedStations = volc_stations.slice(0, 5).map(function(x) {
+        return x[0];
+    });
+
+    if (typeof(Storage) !== 'undefined') {
+        var keyValue = localStorage.getItem(`volcSites_${volcano}`);
+        if (keyValue !== null && keyValue !== "[]")
+            selectedStations = JSON.parse(keyValue);
+    } else {
+        console.error('No local storage. Unable retrieve station selections.');
+    }
+
     for (var i = 0; i < volc_stations.length; i++) {
         var sta = volc_stations[i];
         var name = sta[0];
         var dist = Math.round(sta[1] * 100) / 100;
         var disp = `${name} (${dist}km)`
-        var html = `<li class="stationOption"><input id="station_${name}" type="checkbox" data-station=${name} />`
+        var html = `<li class="stationItem"><input class="stationOption" id="station_${name}" type="checkbox" data-station=${name} />`
         html += `${disp}</li>`
         $('#stationSelect').append(html);
-        $(`#station_${name}`)[0].checked = true;
+        if (selectedStations.includes(name)) //automatically re-select previously selected stations
+            $(`#station_${name}`)[0].checked = true;
     }
 
     showMosaic();
@@ -162,19 +179,26 @@ function showMosaic() {
     var timeDiv = `<div class="dateBoundry"><span class="dateLabel">${curTime}</span></div>`;
     $('#mosaic').empty();
     var count = 0;
-    var stations = sitesByVolcano[$('#volcano').val()];
-    stations.sort(function(a, b) {
-        if (a[1] < b[1]) return -1;
-        if (a[1] > b[1]) return 1;
-        return 0;
+    stations = [];
+    $('input.stationOption:checked').each(function(idx, element) {
+        stations.push($(element).data('station'))
     });
+
+    //store station selections in localStorage
+    if (typeof(Storage) !== 'undefined') {
+        localStorage.setItem(`volcSites_${$('#volcano').val()}`,
+            JSON.stringify(stations)
+        );
+    } else {
+        console.error('No local storage. Unable to save station selections.');
+    }
 
     while (startTime < endTime) {
         if (count % columns === 0) {
             var startDiv = $('<div class=rowStart>');
             var siteDiv = $('<div class=siteDiv>');
             for (var i = 0; i < stations.length; i++) {
-                var site = stations[i][0];
+                var site = stations[i];
                 siteDiv.append(`<span class=siteLabel>${site}</span>`);
             }
             startDiv.append(timeDiv);
@@ -189,7 +213,7 @@ function showMosaic() {
 
         $('#mosaic').append(imgDiv);
         for (var i = 0; i < stations.length; i++) {
-            var sta = stations[i][0];
+            var sta = stations[i];
             var url = genImageUrl(startTime, sta);
             var img = `<img src="${url}"  class="mosaicImg" onerror="mosaicImgErr(this)">`;
             imgDiv.append(img);
@@ -225,11 +249,7 @@ function genImageUrl(time, station) {
 
 function getFullImage() {
     var time = $(this).data('time').format('YYYY-MM-DDTHH:mm:ss');
-    var req_stations = []
-    var disp_stations = $(this).data('stations');
-    for (var i = 0; i < disp_stations.length; i++) {
-        req_stations.push(disp_stations[i][0]);
-    }
+    var req_stations = $(this).data('stations');
     var req_stations = JSON.stringify(req_stations);
     var volcano = $(this).data('volcano');
 

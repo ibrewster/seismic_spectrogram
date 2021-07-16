@@ -28,7 +28,7 @@ DEFAULT_CHANNEL = 'BHZ'
 NETWORKS = ['AV', 'AK']
 
 # Maximum number of stations to show per volcano plot
-MAX_STATIONS = 5
+MAX_STATIONS = 10
 
 # Only include stations that have received data within this time period (seconds)
 MAX_AGE = 1 * 24 * 60 * 60  # 1 days
