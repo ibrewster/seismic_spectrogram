@@ -35,14 +35,13 @@ def load(network = None, station = None, location = None,
     winston_url = CONFIG['WINSTON']['url']
     winston_port = CONFIG['WINSTON'].getint('port', 16022)
 
-    PAD = 10
-
     # filter parameters
     low = CONFIG['FILTER'].getfloat('lowcut', 0.5)
     high = CONFIG['FILTER'].getfloat('highcut', 15)
     order = CONFIG['FILTER'].getint('order', 2)
 
     window_size = CONFIG['SPECTROGRAM'].getint('WindowSize', fallback = None)
+    PAD = CONFIG['SPECTROGRAM'].getint('padding', fallback = 10)
 
     wclient = WClient(winston_url, winston_port)
 
@@ -61,6 +60,8 @@ def load(network = None, station = None, location = None,
 
         # TODO: flag limited data availability
     except (IndexError, AvailabilityError):
+        with open('/tmp/plots/AAA.txt', 'a') as errFile:
+            errFile.write(f"Availability error for {station}\n")
         # No availability for this station/timerange
         return (None, None)
 
@@ -76,7 +77,29 @@ def load(network = None, station = None, location = None,
     )
 
     if stream.count() == 0:
+        with open('/tmp/plots/AAA.txt', 'a') as errFile:
+            errFile.write(stream[0].id)
+            errFile.write(' (counts): ')
+            errFile.write(str(stream.count()) + "/n")
         return (None, None)  # No data for this station, so just leave an empty plot
+
+    # Merge any gaped traces
+    # Everything needs to be the same dtype
+    for tr in stream:
+        tr.data = tr.data.astype(int)
+
+    stream = stream.merge(method = 1, fill_value = 'latest',
+                          interpolation_samples = -1)
+
+    if window_size is not None and stream[0].count() < window_size:
+        # Not enough data to work with
+        with open('/tmp/plots/AAA.txt', 'a') as errFile:
+            errFile.write(stream[0].id)
+            errFile.write(': ')
+            errFile.write(str(stream[0].count()))
+            errFile.write(' ')
+            errFile.write(str(window_size) + '\n')
+        return (None, None)
 
     # What it says
     stream.detrend()
@@ -85,16 +108,8 @@ def load(network = None, station = None, location = None,
     stream.filter('bandpass', freqmin = low, freqmax = high,
                   corners = order, zerophase = True)
 
-    # Merge any gaped traces
-    stream = stream.merge(method = 1, fill_value = numpy.nan,
-                          interpolation_samples = -1)
-
     # And pad out any short traces
     stream.trim(starttime - PAD, endtime + PAD, pad = True, fill_value = numpy.nan)
-
-    if window_size is not None and stream[0].count() < window_size:
-        # Not enough data to work with
-        return (None, None)
 
     # Get the actual start time from the data, in case it's
     # slightly different from what we requested.

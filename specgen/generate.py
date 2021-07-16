@@ -83,7 +83,7 @@ def main():
                 path = os.path.join(img_base, loc, year, month, day)
                 os.makedirs(path, exist_ok = True)
                 filepath = os.path.join(path, filename)
-
+                # generate_spectrogram(filepath, loc, loc_info, start, end)
                 future = executor.submit(generate_spectrogram, filepath,
                                          loc, loc_info, start, end)
                 procs.append((loc, start, end, future))
@@ -95,11 +95,11 @@ def main():
     (?,?,?)
     """
     for station, dtstart, dtend, proc in procs:
-        if proc.exception() is not None:
-            print(proc.exception())
-            missed_flag = True
-        else:
+        try:
             missed_flag = proc.result()
+        except Exception as e:
+            print(e)
+            missed_flag = True
 
         if missed_flag:
             with sqlite3.connect(cache_db) as conn:

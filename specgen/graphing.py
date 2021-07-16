@@ -7,6 +7,7 @@ matplotlib.use('Agg')
 import matplotlib.dates as mdates
 from matplotlib import pyplot as plt
 from matplotlib.colors import Normalize
+import pandas
 from scipy.signal import spectrogram
 
 from .config import config
@@ -14,38 +15,7 @@ from .colormap import spectro_map
 
 
 def gen_spectrograph(times, data):
-    station = data.stats['station']
-    channel = data.stats['channel']
-    station_label = f"{station}.{channel}"
-
-    # spectrogram parameters
-    window_type = config['SPECTROGRAM']['WindowType']
-    window_size = config['SPECTROGRAM'].getint('WindowSize')
-    overlap = config['SPECTROGRAM'].getint('Overlap')
-    NFFT = config['SPECTROGRAM'].getint('NFFT')
-
-    # Spectrogram graph range display
-    min_freq = config['SPECTROGRAM'].getint('MinFreq', 0)
-    max_freq = config['SPECTROGRAM'].getint('MaxFreq', 10)
-
-    # Generate a linear normilization for the spectrogram.
-    # Values here are arbitrary, just what happened to work in testing.
-    norm = Normalize(-360, -180)
-
-    cm = spectro_map()
-
-    # Generate the parameters/data for a spectrogram
-    sample_rate = data.stats['sampling_rate']
-    z_data = data.data
-    spec_info = spectrogram(z_data, sample_rate, window_type, nperseg = window_size,
-                            noverlap = overlap, nfft = NFFT)
-
-    # Convert the times returned from the spectrogram function (0-600 seconds)
-    # to real timestamps to line up with the waveform.
-    spectrograph_times = spec_info[1]
-    DATA_START = data.stats['starttime']
-    spectrograph_times = (spectrograph_times + DATA_START.timestamp).astype('datetime64[s]')
-
+    data.plot(outfile = f"/tmp/plots/{data.id}test-2.png")
     # Create a plot figure to hold the waveform and spectrogram graphs
     plot_height = 1.52
     plot_width = 5.76
@@ -63,23 +33,56 @@ def gen_spectrograph(times, data):
     # Configure the plot for this station
     ax1 = axes[0]
     ax2 = axes[1]
+    gen_station_subplots(times, data, ax1, ax2)
 
-    ax1.set_yticks([])  # No y labels on waveform plot
+    axes[-1].xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))  # Format dates as hour:minute
+
+    side_padding = 25 / (plot_width * dpi)
+    bottom_padding = 25 / (plot_height * dpi)
+    fig.tight_layout(pad = 0, rect = (side_padding, bottom_padding,
+                                      1 - side_padding, 1))
+
+    return fig
+
+
+def gen_station_subplots(times, data, ax1, ax2):
+    # spectrogram parameters
+    window_type = config['SPECTROGRAM']['WindowType']
+    window_size = config['SPECTROGRAM'].getint('WindowSize')
+    overlap = config['SPECTROGRAM'].getint('Overlap')
+    NFFT = config['SPECTROGRAM'].getint('NFFT')
+
+    # Generate the parameters/data for a spectrogram
+    sample_rate = data.stats['sampling_rate']
+    z_data = data.data
+
+    spec_info = spectrogram(z_data, sample_rate, window_type, nperseg = window_size,
+                            noverlap = overlap, nfft = NFFT)
+
+    # Convert the times returned from the spectrogram function (0-600 seconds)
+    # to real timestamps to line up with the waveform.
+    spectrograph_times = spec_info[1]
+    DATA_START = data.stats['starttime']
+    spectrograph_times = (spectrograph_times + DATA_START.timestamp).astype('datetime64[s]')
+
+    # Generate a linear normilization for the spectrogram.
+    # Values here are arbitrary, just what happened to work in testing.
+    norm = Normalize(-360, -180)
+
+    cm = spectro_map()
 
     ticklen = 4
 
-    ax2.set_ylim([min_freq, max_freq])
-    ax2.set_yticks(numpy.arange(min_freq, max_freq, 2))  # Mark even values of frequency
-    ax2.set_ylabel(station_label)  # Add the station label
-    ax2.xaxis.set_tick_params(direction='inout', bottom = True,
-                              top = True, length = ticklen)
-    ax2.yaxis.set_tick_params(direction = "in", right = True)
+    station = data.stats['station']
+    channel = data.stats['channel']
+    station_label = f"{station}.{channel}"
+
+    configure_spectrograph_y(station_label, ax1, ax2)
 
     direction = "in"
 
     ax1.xaxis.set_tick_params(direction = direction, bottom = True,
                               top = True, length = ticklen)
-    ax1.yaxis.set_tick_params(left = False)
 
     # Plot the waveform
     ax1.plot(times, z_data, 'k-', linewidth = .5)
@@ -90,16 +93,34 @@ def gen_spectrograph(times, data):
         norm = norm, cmap = cm, shading = "auto"
     )
 
-    ax2.set_xlim(times[0], times[-1])  # Expand x axes to the full requested range
+    # Set range to exact 10 minute mark
+    range_start = times[0]
+    if (pandas.Timestamp(range_start).second > 30):
+        range_start = (range_start + numpy.timedelta64(1, 'm'))
+    range_start = range_start.astype('datetime64[m]')
 
-    axes[-1].xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))  # Format dates as hour:minute
+    range_end = times[-1]
+    range_end = range_end.astype('datetime64[m]')
 
-    side_padding = 25 / (plot_width * dpi)
-    bottom_padding = 25 / (plot_height * dpi)
-    fig.tight_layout(pad = 0, rect = (side_padding, bottom_padding,
-                                      1 - side_padding, 1))
+    ax2.set_xlim(range_start, range_end)  # Expand x axes to the full requested range
 
-    return fig
+
+def configure_spectrograph_y(station_label, ax1, ax2):
+    # Spectrogram graph range display
+    min_freq = config['SPECTROGRAM'].getint('MinFreq', 0)
+    max_freq = config['SPECTROGRAM'].getint('MaxFreq', 10)
+
+    ticklen = 4
+
+    ax1.set_yticks([])  # No y labels on waveform plot
+    ax1.yaxis.set_tick_params(left = False)
+
+    ax2.set_ylim([min_freq, max_freq])
+    ax2.set_yticks(numpy.arange(min_freq, max_freq, 2))  # Mark even values of frequency
+    ax2.set_ylabel(station_label)  # Add the station label
+    ax2.xaxis.set_tick_params(direction='inout', bottom = True,
+                              top = True, length = ticklen)
+    ax2.yaxis.set_tick_params(direction = "in", right = True)
 
 
 def gen_thumbnail(filename, fig):

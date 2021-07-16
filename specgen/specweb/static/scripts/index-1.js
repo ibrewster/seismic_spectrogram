@@ -4,6 +4,7 @@ var volcanoes = null;
 var sitesByVolcano = null;
 
 $(document).ready(function() {
+    $(document).on('click', '.mosaicSegment', getFullImage);
     $('#volcano').change(changeVolcano);
     $('.volcNav').click(navVolcano);
     $('.timeNav').click(navTime);
@@ -44,6 +45,8 @@ $(document).ready(function() {
 
             setColumns(6);
         });
+
+    $('#volcano').focus();
 });
 
 function toggleTimeMode() {
@@ -150,6 +153,10 @@ function showMosaic() {
         }
         startTime = startTime.add(10 * 60 * 1000); //add 10 minutes
         var imgDiv = $('<div class=mosaicSegment>');
+        imgDiv.data('time', startTime);
+        imgDiv.data('stations', stations);
+        imgDiv.data('volcano', $('#volcano').val());
+
         $('#mosaic').append(imgDiv);
         for (var i = 0; i < stations.length; i++) {
             var sta = stations[i][0];
@@ -184,4 +191,30 @@ function genImageUrl(time, station) {
     url += time.format("YYYYMMDDTHHmm00.png")
 
     return url;
+}
+
+function getFullImage() {
+    var time = $(this).data('time').format('YYYY-MM-DDTHH:mm:ss');
+    var req_stations = []
+    var disp_stations = $(this).data('stations');
+    for (var i = 0; i < disp_stations.length; i++) {
+        req_stations.push(disp_stations[i][0]);
+    }
+    var req_stations = JSON.stringify(req_stations);
+    var volcano = $(this).data('volcano');
+
+    args = {
+        time: time,
+        stations: req_stations,
+        volcano: volcano
+    }
+
+    var str = [];
+    for (var p in args)
+        if (args.hasOwnProperty(p)) {
+            str.push(encodeURIComponent(p) + "=" + encodeURIComponent(args[p]));
+        }
+    var query = str.join("&");
+    var url = `fullImage?${query}`;
+    window.open(url);
 }

@@ -49,6 +49,7 @@ def main():
         'NFFT': 1024,
         'MaxFreq': 10,
         'MinFreq': 0,
+        'padding': 10,
     }
 
     # Get any enviroment variable overrides

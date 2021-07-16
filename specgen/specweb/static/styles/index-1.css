@@ -21,6 +21,7 @@ input.strictNumsOnly {
 .mosaicImg {
     width: 150px;
     height: 39px;
+    line-height: 39px;
 }
 
 .mosaicImg.empty {
@@ -41,6 +42,7 @@ input.strictNumsOnly {
     display: inline-grid;
     grid-template-columns: 1fr;
     align-items: center;
+    cursor: pointer;
 }
 
 .rowStart {
