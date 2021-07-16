@@ -1,0 +1,13 @@
+[Unit]
+Description = Seismic Spectrograms
+After = network.target
+
+[Service]
+ExecStart = /data/seismic_spectrogram/bin/uwsgi -i /data/seismic_spectrogram/specgen/specweb/specweb.ini
+RuntimeDirectory = specweb
+RuntimeDirectoryMode = 777
+Restart=on-failure
+RestartSec=15s
+
+[Install]
+WantedBy = multi-user.target
